@@ -73,22 +73,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToLogin }) =
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [bgColor, setBgColor] = useState(colorPalette[0]);
-    const [isHovered, setIsHovered] = useState(false);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            if (!isHovered) {
-                setCurrentImageIndex(prevIndex => (prevIndex + 1) % backgroundImages.length);
-            }
+            setCurrentImageIndex(prevIndex => (prevIndex + 1) % backgroundImages.length);
         }, 5000);
         return () => clearInterval(interval);
-    }, [backgroundImages.length, isHovered]);
-
-    // Update upcoming reminders - this will be in the MeetingsPage component
-
-    const handleImageClick = (index: number) => {
-        setCurrentImageIndex(index);
-    };
+    }, [backgroundImages.length]);
 
 
     return (
@@ -100,18 +91,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToLogin }) =
             </header>
 
             {/* Hero Section */}
-            <section className="relative text-white py-32 px-6 overflow-hidden" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+            <section className="relative text-white py-32 px-6 overflow-hidden">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentImageIndex}
-                        className="absolute inset-0 bg-cover bg-center cursor-pointer"
+                        className="absolute inset-0 bg-cover bg-center"
                         style={{ backgroundImage: `url(${backgroundImages[currentImageIndex]})` }}
                         initial={{ opacity: 0, scale: 1.05 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.05 }}
                         transition={{ duration: 2, ease: 'easeInOut' }}
-                        whileHover={{ scale: 1.02 }}
-                        onClick={() => setCurrentImageIndex((currentImageIndex + 1) % backgroundImages.length)}
                     />
                 </AnimatePresence>
 
@@ -217,29 +206,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToLogin }) =
                     {/* Separator */}
                     <div className="w-px h-8 bg-white/30"></div>
 
-                    {/* Auto-play Toggle */}
-                    <motion.button
-                        onClick={() => setIsHovered(!isHovered)}
-                        className="flex items-center space-x-2 text-white/80 hover:text-white transition-colors"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        {isHovered ? (
-                            <>
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-sm font-medium">Resume Auto</span>
-                            </>
-                        ) : (
-                            <>
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-sm font-medium">Pause Auto</span>
-                            </>
-                        )}
-                    </motion.button>
                 </div>
 
                 {/* Enhanced Image Navigation */}
@@ -256,24 +222,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToLogin }) =
                         </svg>
                     </motion.button>
 
-                    {/* Image Dots */}
-                    <div className="flex space-x-2">
-                        {backgroundImages.map((_, index) => (
-                            <motion.button
-                                key={index}
-                                onClick={() => handleImageClick(index)}
-                                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                                    currentImageIndex === index ? 'bg-white' : 'bg-white/50'
-                                }`}
-                                whileHover={{ scale: 1.2 }}
-                                whileTap={{ scale: 0.9 }}
-                                animate={{
-                                    scale: currentImageIndex === index ? 1.2 : 1,
-                                    backgroundColor: currentImageIndex === index ? '#ffffff' : 'rgba(255, 255, 255, 0.5)'
-                                }}
-                            />
-                        ))}
-                    </div>
 
                     {/* Next Button */}
                     <motion.button
@@ -586,8 +534,9 @@ interface LoginPageProps {
     onWalletLogin: () => void;
     isLoading: boolean;
     onSwitchToSignup?: () => void;
+    onForgotPassword: () => void;
 }
-export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onWalletLogin, isLoading, onSwitchToSignup }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onWalletLogin, isLoading, onSwitchToSignup, onForgotPassword }) => {
     return (
         <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-gradient-to-br from-gray-900 via-gray-800 to-black bg-[length:200%_200%] animate-gradient-pan">
             <div className="max-w-md w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-8 text-white">
@@ -608,6 +557,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onWalletLogin, is
                         {isLoading ? <Spinner /> : 'Login'}
                     </Button>
                 </form>
+
+                {/* Forgot Password Link */}
+                <div className="text-center mb-4">
+                    <button
+                        onClick={onForgotPassword}
+                        className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                    >
+                        Forgot your password?
+                    </button>
+                </div>
 
                 {/* Google Sign In Button */}
                 <div className="mt-4">
@@ -651,14 +610,86 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onWalletLogin, is
     );
 };
 
+// Forgot Password Page
+interface ForgotPasswordPageProps {
+    onBackToLogin: () => void;
+}
+export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onBackToLogin }) => {
+    const [email, setEmail] = useState('');
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        // Simulate API call
+        setTimeout(() => {
+            setIsSubmitted(true);
+            setIsLoading(false);
+        }, 1500);
+    };
+
+    return (
+        <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-gradient-to-br from-gray-900 via-gray-800 to-black bg-[length:200%_200%] animate-gradient-pan">
+            <div className="max-w-md w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-8 text-white">
+                <div className="text-center mb-8">
+                    <RealtyFlowLogo className="justify-center mb-4" />
+                    <h2 className="text-2xl font-bold">Reset Password</h2>
+                    <p className="text-gray-400 mt-2">
+                        {isSubmitted ? 'Check your email for reset instructions' : 'Enter your email to receive a password reset link'}
+                    </p>
+                </div>
+
+                {!isSubmitted ? (
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300">Email Address</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="mt-1 block w-full bg-white/20 border border-white/30 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-400"
+                                placeholder="john.doe@realty.com"
+                                required
+                            />
+                        </div>
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading ? <Spinner /> : 'Send Reset Link'}
+                        </Button>
+                    </form>
+                ) : (
+                    <div className="text-center space-y-4">
+                        <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4">
+                            <div className="text-green-400 text-sm">
+                                Password reset link sent to <strong>{email}</strong>
+                            </div>
+                        </div>
+                        <p className="text-gray-400 text-sm">
+                            Didn't receive the email? Check your spam folder or try again.
+                        </p>
+                    </div>
+                )}
+
+                <div className="text-center mt-6">
+                    <button onClick={onBackToLogin} className="text-blue-400 hover:text-blue-300 font-semibold">
+                        ← Back to Sign In
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // Sign Up Page
 interface SignupPageProps {
     onSignup: () => void;
     onWalletSignup: () => void;
     isLoading: boolean;
     onSwitchToLogin?: () => void;
+    onForgotPassword: () => void;
 }
-export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onWalletSignup, isLoading, onSwitchToLogin }) => {
+export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onWalletSignup, isLoading, onSwitchToLogin, onForgotPassword }) => {
     return (
         <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-gradient-to-br from-gray-900 via-gray-800 to-black bg-[length:200%_200%] animate-gradient-pan">
             <div className="max-w-md w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-8 text-white">
@@ -1325,26 +1356,8 @@ export const LeadsPage: React.FC = () => {
     const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
     const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
     const [dragOverColumn, setDragOverColumn] = useState<LeadStatus | null>(null);
-    const [sortBy, setSortBy] = useState<'score' | 'date' | 'name'>('score');
-    const [filterPriority, setFilterPriority] = useState<string>('all');
 
     const leadColumns = Object.values(LeadStatus);
-
-    // Sort and filter leads
-    const processedLeads = leads
-        .filter(lead => filterPriority === 'all' || lead.priority === filterPriority)
-        .sort((a, b) => {
-            switch (sortBy) {
-                case 'score':
-                    return (b.score || 0) - (a.score || 0);
-                case 'date':
-                    return b.lastContacted.getTime() - a.lastContacted.getTime();
-                case 'name':
-                    return a.name.localeCompare(b.name);
-                default:
-                    return 0;
-            }
-        });
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, lead: Lead) => {
         setDraggedLead(lead);
@@ -1381,115 +1394,53 @@ export const LeadsPage: React.FC = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 space-y-6 h-full flex flex-col">
-            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white">AI-Powered Lead Management</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Track and nurture your leads with intelligent scoring and insights.</p>
-                </div>
-
-                {/* Filters and Sorting */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</label>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as 'score' | 'date' | 'name')}
-                            className="text-sm bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-1 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="score">AI Score</option>
-                            <option value="date">Last Contact</option>
-                            <option value="name">Name</option>
-                        </select>
+        <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+            {/* Header */}
+            <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Leads</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Priority:</label>
-                        <select
-                            value={filterPriority}
-                            onChange={(e) => setFilterPriority(e.target.value)}
-                            className="text-sm bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-1 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="all">All Priorities</option>
-                            <option value="hot">🔥 Hot Leads</option>
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                        </select>
+                    <div className="flex items-center space-x-3">
+                        <button className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            New Lead
+                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* AI Insights Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-red-800 dark:text-red-300">Hot Leads</p>
-                            <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                                {leads.filter(l => l.priority === 'hot').length}
-                            </p>
-                        </div>
-                        <div className="text-red-500">🔥</div>
-                    </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Avg Score</p>
-                            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                {Math.round(leads.reduce((sum, l) => sum + (l.score || 0), 0) / leads.length)}
-                            </p>
-                        </div>
-                        <div className="text-blue-500">🎯</div>
-                    </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-green-800 dark:text-green-300">Conversion Rate</p>
-                            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                {Math.round((leads.filter(l => l.status === LeadStatus.Closed).length / leads.length) * 100)}%
-                            </p>
-                        </div>
-                        <div className="text-green-500">📈</div>
-                    </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-purple-800 dark:text-purple-300">Active Leads</p>
-                            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                {leads.filter(l => l.status !== LeadStatus.Closed).length}
-                            </p>
-                        </div>
-                        <div className="text-purple-500">⚡</div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex-1 flex overflow-x-auto space-x-4 p-2 -m-2">
+            {/* Board */}
+            <div className="flex-1 flex overflow-x-auto overflow-y-hidden p-6 space-x-6">
                 {leadColumns.map(status => (
-                    <motion.div
+                    <div
                         key={status}
-                        className={`bg-gray-100 dark:bg-gray-800/50 rounded-lg w-80 flex-shrink-0 flex flex-col transition-all duration-200 ${
+                        className={`bg-gray-100 dark:bg-gray-800 rounded-lg w-80 flex-shrink-0 flex flex-col min-h-0 ${
                             dragOverColumn === status ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
                         }`}
                         onDragOver={(e) => handleDragOver(e, status)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, status)}
-                        animate={{ scale: dragOverColumn === status ? 1.02 : 1 }}
-                        transition={{ duration: 0.2 }}
                     >
-                        <h3 className="font-bold p-4 text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700">
-                            {status} ({processedLeads.filter(l => l.status === status).length})
-                        </h3>
-                        <div className="p-2 space-y-2 overflow-y-auto min-h-0 flex-1">
+                        {/* Column Header */}
+                        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-medium text-gray-900 dark:text-white text-sm uppercase tracking-wide">
+                                    {status}
+                                </h3>
+                                <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium text-gray-500 bg-gray-200 dark:bg-gray-700 rounded-full">
+                                    {leads.filter(l => l.status === status).length}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Column Content */}
+                        <div className="flex-1 p-2 space-y-3 overflow-y-auto min-h-0">
                             <AnimatePresence>
-                                {processedLeads.filter(lead => lead.status === status).map(lead => (
+                                {leads.filter(lead => lead.status === status).map(lead => (
                                     <motion.div
                                         key={lead.id}
                                         layout
@@ -1500,16 +1451,50 @@ export const LeadsPage: React.FC = () => {
                                         draggable
                                         onDragStart={(e) => handleDragStart(e, lead)}
                                         onDragEnd={handleDragEnd}
-                                        className={`cursor-grab active:cursor-grabbing transition-opacity ${
-                                            draggedLead?.id === lead.id ? 'opacity-50' : 'opacity-100'
+                                        className={`bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow ${
+                                            draggedLead?.id === lead.id ? 'opacity-50 rotate-2' : 'opacity-100'
                                         }`}
                                     >
-                                        <LeadCard lead={lead} />
+                                        <div className="space-y-3">
+                                            <div>
+                                                <h4 className="font-medium text-gray-900 dark:text-white text-sm">{lead.name}</h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{lead.email}</p>
+                                            </div>
+
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="text-gray-500 dark:text-gray-400">{lead.source}</span>
+                                                <span className="text-gray-400 dark:text-gray-500">
+                                                    {lead.lastContacted.toLocaleDateString()}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-2">
+                                                    <img
+                                                        src={`https://i.pravatar.cc/24?u=${lead.email}`}
+                                                        alt={lead.assignedTo}
+                                                        className="w-6 h-6 rounded-full"
+                                                        title={`Assigned to ${lead.assignedTo}`}
+                                                    />
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400">{lead.phone}</span>
+                                                </div>
+                                                <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </motion.div>
                                 ))}
                             </AnimatePresence>
+
+                            {/* Add Card Button */}
+                            <button className="w-full p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm font-medium">
+                                + Add Lead
+                            </button>
                         </div>
-                    </motion.div>
+                    </div>
                 ))}
             </div>
         </div>

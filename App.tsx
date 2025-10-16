@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Page, type Notification, type ChatConversation } from './types';
 import { NAV_ITEMS, MOCK_NOTIFICATIONS, MOCK_CONVERSATIONS } from './constants';
-import { LandingPage, LoginPage, SignupPage, DashboardPage, MeetingsPage, LeadsPage, PropertiesPage, AnalyticsPage, SettingsPage, AdminPanel } from './pages/index';
+import { LandingPage, LoginPage, SignupPage, ForgotPasswordPage, DashboardPage, MeetingsPage, LeadsPage, PropertiesPage, AnalyticsPage, SettingsPage, AdminPanel } from './pages/index';
 import {
     IconLogo, IconDashboard, IconMeetings, IconAnalytics, IconSettings,
     IconBell, IconWallet, IconSun, IconMoon, IconChevronDown,
@@ -84,8 +84,9 @@ interface HeaderProps {
     toggleTheme: () => void;
     isUserDropdownOpen: boolean;
     setIsUserDropdownOpen: (open: boolean) => void;
+    onSignOut: () => void;
 }
-const Header: React.FC<HeaderProps> = ({ onToggleSidebar, onNotificationClick, onWalletClick, unreadCount, theme, toggleTheme, isUserDropdownOpen, setIsUserDropdownOpen }) => (
+const Header: React.FC<HeaderProps> = ({ onToggleSidebar, onNotificationClick, onWalletClick, unreadCount, theme, toggleTheme, isUserDropdownOpen, setIsUserDropdownOpen, onSignOut }) => (
     <header className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-lg sticky top-0 z-10 p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
         <button onClick={onToggleSidebar} className="md:hidden text-gray-600 dark:text-gray-300">
              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -137,9 +138,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, onNotificationClick, o
                                 Help & Support
                             </a>
                             <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
-                            <a href="#" className="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                            <button
+                                onClick={onSignOut}
+                                className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            >
                                 Sign Out
-                            </a>
+                            </button>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -156,7 +160,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, onNotificationClick, o
     </header>
 );
 
-type AppState = 'landing' | 'login' | 'signup' | 'dashboard';
+type AppState = 'landing' | 'login' | 'signup' | 'forgot-password' | 'dashboard';
 
 // Main App Component
 const App: React.FC = () => {
@@ -232,6 +236,7 @@ const App: React.FC = () => {
             onWalletLogin={handleWalletLogin}
             isLoading={isLoading}
             onSwitchToSignup={() => setAppState('signup')}
+            onForgotPassword={() => setAppState('forgot-password')}
         />;
     }
 
@@ -241,6 +246,13 @@ const App: React.FC = () => {
             onWalletSignup={handleWalletSignup}
             isLoading={isLoading}
             onSwitchToLogin={() => setAppState('login')}
+            onForgotPassword={() => setAppState('forgot-password')}
+        />;
+    }
+
+    if (appState === 'forgot-password') {
+        return <ForgotPasswordPage
+            onBackToLogin={() => setAppState('login')}
         />;
     }
 
@@ -257,6 +269,7 @@ const App: React.FC = () => {
                     toggleTheme={toggleTheme}
                     isUserDropdownOpen={isUserDropdownOpen}
                     setIsUserDropdownOpen={setIsUserDropdownOpen}
+                    onSignOut={() => setAppState('login')}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto">
                     {renderPage()}
