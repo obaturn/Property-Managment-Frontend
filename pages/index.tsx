@@ -4,6 +4,7 @@ import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import type { Meeting, Lead, Property } from '../types';
 import { Page, MeetingStatus, LeadStatus, Agent } from '../types';
 import { MOCK_MEETINGS, MOCK_ANALYTICS_DATA, MOCK_LEADS, MOCK_PROPERTIES, MOCK_CONVERSATIONS, MOCK_AGENTS } from '../constants';
+// import { useLeads } from '../hooks/useLeads';
 import {
     StatCard,
     MeetingsLineChart,
@@ -87,7 +88,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToLogin }) =
             {/* Header */}
             <header className="container mx-auto px-6 py-4 flex justify-between items-center bg-white border-b border-gray-200">
                 <RealtyFlowLogo className="text-red-500" />
-                <button onClick={onNavigateToLogin} className="text-blue-600 font-semibold hover:text-blue-800 transition">Sign In</button>
+                <button onClick={() => onNavigateToLogin()} className="text-blue-600 font-semibold hover:text-blue-800 transition">Sign In</button>
             </header>
 
             {/* Hero Section */}
@@ -427,7 +428,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToLogin }) =
                         viewport={{ once: true }}
                         transition={{ duration: 0.6, delay: 0.4 }}
                     >
-                        <Button onClick={onNavigateToLogin} className="!text-lg !py-3 !px-8 transform hover:scale-105 !bg-blue-600 hover:!bg-blue-700">
+                        <Button onClick={() => onNavigateToLogin()} className="!text-lg !py-3 !px-8 transform hover:scale-105 !bg-blue-600 hover:!bg-blue-700">
                             Sign Up Now
                         </Button>
                     </motion.div>
@@ -791,7 +792,7 @@ export const DashboardPage: React.FC = () => {
                      onClick={() => {/* Could open a detailed rewards modal */}}
                  >
                     <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white p-2 md:p-3 rounded-full shadow-lg">
-                       <IconTrophy className="h-5 w-5 md:h-6 md:w-6" />
+                       <IconTrophy />
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Web3 Rewards Earned</p>
@@ -806,7 +807,7 @@ export const DashboardPage: React.FC = () => {
                                 whileHover={{ x: 2 }}
                             >
                                 <span>View on Blockchain</span>
-                                <IconExternalLink className="h-3 w-3" />
+                                <IconExternalLink />
                             </motion.a>
                         </div>
                     </div>
@@ -1039,7 +1040,7 @@ export const MeetingsPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-4">
                     <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
-                        <IconPlus className="h-4 w-4" />
+                        <IconPlus />
                         New Meeting
                     </Button>
                     <div className="flex items-center bg-gray-200 dark:bg-gray-700 p-1 rounded-lg">
@@ -1416,14 +1417,16 @@ export const LeadsPage: React.FC = () => {
             {/* Board */}
             <div className="flex-1 flex overflow-x-auto overflow-y-hidden p-6 space-x-6">
                 {leadColumns.map(status => (
-                    <div
+                    <motion.div
                         key={status}
-                        className={`bg-gray-100 dark:bg-gray-800 rounded-lg w-80 flex-shrink-0 flex flex-col min-h-0 ${
+                        className={`bg-gray-100 dark:bg-gray-800 rounded-lg w-80 flex-shrink-0 flex flex-col min-h-0 transition-all duration-200 ${
                             dragOverColumn === status ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
                         }`}
                         onDragOver={(e) => handleDragOver(e, status)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, status)}
+                        animate={{ scale: dragOverColumn === status ? 1.02 : 1 }}
+                        transition={{ duration: 0.2 }}
                     >
                         {/* Column Header */}
                         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
@@ -1449,10 +1452,10 @@ export const LeadsPage: React.FC = () => {
                                         exit={{ opacity: 0, y: -20 }}
                                         transition={{ duration: 0.3 }}
                                         draggable
-                                        onDragStart={(e) => handleDragStart(e, lead)}
+                                        onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent<HTMLDivElement>, lead)}
                                         onDragEnd={handleDragEnd}
-                                        className={`bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow ${
-                                            draggedLead?.id === lead.id ? 'opacity-50 rotate-2' : 'opacity-100'
+                                        className={`bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 cursor-grab active:cursor-grabbing hover:shadow-md transition-all duration-200 ${
+                                            draggedLead?.id === lead.id ? 'opacity-50 rotate-2 scale-95' : 'opacity-100'
                                         }`}
                                     >
                                         <div className="space-y-3">
@@ -1494,7 +1497,7 @@ export const LeadsPage: React.FC = () => {
                                 + Add Lead
                             </button>
                         </div>
-                    </div>
+                    </motion.div>
                 ))}
             </div>
         </div>
