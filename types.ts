@@ -66,15 +66,33 @@ export interface Lead {
     aiInsights?: string[]; // AI-generated suggestions
 }
 
+export interface PropertyFile {
+    url: string;
+    type: 'image' | 'video';
+    filename?: string;
+    size?: number;
+    uploadedAt?: string;
+}
+
 export interface Property {
-    id: number;
+
+    _id?: string;
     address: string;
     price: number;
-    bedrooms: number;
-    bathrooms: number;
-    sqft: number;
-    imageUrl: string;
-    description: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    sqft?: number;
+    images?: PropertyFile[];
+    imageUrl?: string; // Keep for backward compatibility
+    description?: string;
+    propertyType?: 'House' | 'Condo' | 'Townhouse' | 'Apartment' | 'Land' | 'Commercial' | 'Other';
+    status?: 'Available' | 'Pending' | 'Sold' | 'Off Market';
+    yearBuilt?: number;
+    features?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+    pricePerSqft?: number;
+    id?: number; // Frontend ID for compatibility
 }
 
 export interface ChatMessage {

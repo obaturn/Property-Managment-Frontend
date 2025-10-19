@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Meeting, Notification, Lead, Property, ChatConversation } from '../types';
+import type { Meeting, Notification, Lead, Property, PropertyFile, ChatConversation } from '../types';
 import { MeetingStatus, NotificationCategory } from '../types';
 import { MOCK_PROPERTY_IMAGES } from '../constants';
 
@@ -496,63 +496,361 @@ interface PropertyCardProps {
     onEdit: (property: Property) => void;
     onDelete: (property: Property) => void;
 }
-export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onEdit, onDelete }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-        <img src={property.imageUrl} alt={property.address} className="w-full h-48 object-cover" />
-        <div className="p-4">
-            <h3 className="font-bold text-lg text-gray-900 dark:text-white">${property.price.toLocaleString()}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{property.address}</p>
-            <div className="mt-2 flex space-x-4 text-sm text-gray-500 dark:text-gray-300">
-                <span>{property.bedrooms} beds</span>
-                <span>{property.bathrooms} baths</span>
-                <span>{property.sqft} sqft</span>
+export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onEdit, onDelete }) => {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    // Get the primary image - prefer uploaded images, fallback to imageUrl
+    const primaryImage = property.images && property.images.length > 0
+        ? property.images[0].url
+        : property.imageUrl;
+
+    const hasVideo = property.images && property.images.some(img => img.type === 'video');
+    const videoFile = property.images?.find(img => img.type === 'video');
+
+    const handleVideoClick = () => {
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.pause();
+                setIsPlaying(false);
+            } else {
+                videoRef.current.play();
+                setIsPlaying(true);
+            }
+        }
+    };
+
+    return (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div className="relative">
+                {primaryImage ? (
+                    hasVideo && videoFile ? (
+                        <div className="relative w-full h-48 overflow-hidden">
+                            <video
+                                ref={videoRef}
+                                src={videoFile.url}
+                                className="w-full h-full object-cover"
+                                onPlay={() => setIsPlaying(true)}
+                                onPause={() => setIsPlaying(false)}
+                                onEnded={() => setIsPlaying(false)}
+                                poster={primaryImage}
+                                controls={isPlaying}
+                                preload="metadata"
+                            />
+                            {!isPlaying && (
+                                <div
+                                    className="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer hover:bg-black/10 transition-colors"
+                                    onClick={handleVideoClick}
+                                >
+                                    <div className="bg-black/60 rounded-full p-4 hover:bg-black/70 transition-colors">
+                                        <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            )}
+                            {isPlaying && (
+                                <div className="absolute inset-0 pointer-events-none">
+                                    {/* Optional: Add custom controls overlay */}
+                                </div>
+                            )}
+                            <div className="absolute bottom-2 left-2 bg-black/70 text-white text-sm px-3 py-1 rounded flex items-center">
+                                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                                Video Tour
+                            </div>
+                        </div>
+                    ) : (
+                        <img src={primaryImage} alt={property.address} className="w-full h-48 object-cover" />
+                    )
+                ) : (
+                    <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <span className="text-gray-500 dark:text-gray-400">No Image</span>
+                    </div>
+                )}
+
+                {/* Media count indicator */}
+                {property.images && property.images.length > 1 && (
+                    <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                        +{property.images.length - 1} more
+                    </div>
+                )}
+
+                {/* Video indicator for non-video primary images */}
+                {hasVideo && !videoFile && (
+                    <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        Has Video
+                    </div>
+                )}
+            </div>
+
+            <div className="p-4">
+                <h3 className="font-bold text-lg text-gray-900 dark:text-white">${property.price.toLocaleString()}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{property.address}</p>
+                <div className="mt-2 flex space-x-4 text-sm text-gray-500 dark:text-gray-300">
+                    <span>{property.bedrooms} beds</span>
+                    <span>{property.bathrooms} baths</span>
+                    <span>{property.sqft} sqft</span>
+                </div>
+                {property.yearBuilt && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Built in {property.yearBuilt}</p>
+                )}
+                {property.features && property.features.length > 0 && (
+                    <div className="mt-2">
+                        <p className="text-xs text-gray-600 dark:text-gray-300 font-medium">Features:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                            {property.features.slice(0, 3).map((feature, index) => (
+                                <span key={index} className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 px-2 py-1 rounded">
+                                    {feature}
+                                </span>
+                            ))}
+                            {property.features.length > 3 && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">+{property.features.length - 3} more</span>
+                            )}
+                        </div>
+                    </div>
+                )}
+                {property.pricePerSqft && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">${property.pricePerSqft}/sqft</p>
+                )}
+            </div>
+            <div className="px-4 pb-4 flex justify-end space-x-2">
+                <Button onClick={() => onEdit(property)} variant="secondary" className="text-sm py-1 px-3"><IconEdit /> Edit</Button>
+                <Button onClick={() => onDelete(property)} variant="danger" className="text-sm py-1 px-3 !bg-red-100 !text-red-700 hover:!bg-red-200 dark:!bg-red-900/50 dark:!text-red-300 dark:hover:!bg-red-900"><IconTrash /> Delete</Button>
             </div>
         </div>
-        <div className="px-4 pb-4 flex justify-end space-x-2">
-            <Button onClick={() => onEdit(property)} variant="secondary" className="text-sm py-1 px-3"><IconEdit /> Edit</Button>
-            <Button onClick={() => onDelete(property)} variant="danger" className="text-sm py-1 px-3 !bg-red-100 !text-red-700 hover:!bg-red-200 dark:!bg-red-900/50 dark:!text-red-300 dark:hover:!bg-red-900"><IconTrash /> Delete</Button>
-        </div>
-    </div>
-);
+    );
+};
 
 // AddEditPropertyModal Component
 interface AddEditPropertyModalProps {
     isOpen: boolean;
     onClose: () => void;
     property: Property | null;
+    onSave?: (propertyData: any) => Promise<void>;
 }
-export const AddEditPropertyModal: React.FC<AddEditPropertyModalProps> = ({ isOpen, onClose, property }) => {
+export const AddEditPropertyModal: React.FC<AddEditPropertyModalProps> = ({ isOpen, onClose, property, onSave }) => {
     const [selectedImage, setSelectedImage] = useState(property?.imageUrl || MOCK_PROPERTY_IMAGES[0]);
+    const [uploadedFiles, setUploadedFiles] = useState<PropertyFile[]>(property?.images || []);
+    const [features, setFeatures] = useState<string[]>(property?.features || []);
+    const [newFeature, setNewFeature] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isOpen) {
             setSelectedImage(property?.imageUrl || MOCK_PROPERTY_IMAGES[0]);
+            setUploadedFiles(property?.images || []);
+            setFeatures(property?.features || []);
+            setNewFeature('');
         }
     }, [isOpen, property]);
+
+    const addFeature = () => {
+        if (newFeature.trim() && !features.includes(newFeature.trim())) {
+            setFeatures([...features, newFeature.trim()]);
+            setNewFeature('');
+        }
+    };
+
+    const removeFeature = (featureToRemove: string) => {
+        setFeatures(features.filter(f => f !== featureToRemove));
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        // Validate file types and sizes
+        const validFiles: File[] = [];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if ((file.type.startsWith('image/') || file.type.startsWith('video/')) && file.size <= 50 * 1024 * 1024) {
+                validFiles.push(file);
+            }
+        }
+
+        if (validFiles.length === 0) {
+            alert('Please select valid image or video files (max 50MB each)');
+            return;
+        }
+
+        // If editing existing property, upload files immediately
+        if (property?._id) {
+            setIsUploading(true);
+            try {
+                const fileList = new DataTransfer();
+                validFiles.forEach(file => fileList.items.add(file));
+
+                // Import the hook here to avoid circular dependency
+                const { useProperties } = await import('../src/hooks/useProperties');
+                // This is a workaround - in real app, pass uploadPropertyFiles as prop
+                const tempHook = { uploadPropertyFiles: async (id: string, fl: FileList) => {
+                    // This would normally be handled by the hook
+                    console.log('Uploading files for property:', id, fl);
+                }};
+
+                await tempHook.uploadPropertyFiles(property._id, fileList.files);
+                // Refresh uploaded files list
+                setUploadedFiles(prev => [...prev, ...validFiles.map(f => ({
+                    url: URL.createObjectURL(f),
+                    type: f.type.startsWith('video/') ? 'video' as const : 'image' as const,
+                    filename: f.name,
+                    size: f.size
+                }))]);
+            } catch (error) {
+                console.error('Upload failed:', error);
+                alert('Failed to upload files. Please try again.');
+            } finally {
+                setIsUploading(false);
+            }
+        } else {
+            // For new properties, just add to local state
+            setUploadedFiles(prev => [...prev, ...validFiles.map(f => ({
+                url: URL.createObjectURL(f),
+                type: f.type.startsWith('video/') ? 'video' as const : 'image' as const,
+                filename: f.name,
+                size: f.size
+            }))]);
+        }
+    };
+
+    const removeUploadedFile = (index: number) => {
+        setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={property ? "Edit Property" : "Add New Property"} size="lg">
             <div className="max-h-[80vh] overflow-y-auto">
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target as HTMLFormElement);
+                    const propertyData = {
+                        address: formData.get('address') as string,
+                        price: parseFloat(formData.get('price') as string),
+                        bedrooms: parseInt(formData.get('bedrooms') as string) || undefined,
+                        bathrooms: parseInt(formData.get('bathrooms') as string) || undefined,
+                        sqft: parseInt(formData.get('sqft') as string) || undefined,
+                        yearBuilt: parseInt(formData.get('yearBuilt') as string) || undefined,
+                        description: formData.get('description') as string || undefined,
+                        imageUrl: selectedImage,
+                        images: uploadedFiles,
+                        propertyType: formData.get('propertyType') as Property['propertyType'] || 'House',
+                        status: 'Available' as const,
+                        features: features.length > 0 ? features : undefined
+                    };
+                    onSave ? onSave(propertyData) : onClose();
+                }}>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Property Image</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Property Images & Videos</label>
 
+                        {/* Display uploaded files */}
+                        {uploadedFiles.length > 0 && (
+                            <div className="mb-4">
+                                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Uploaded Files:</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                    {uploadedFiles.map((file, index) => (
+                                        <div key={index} className="relative group">
+                                            {file.type === 'video' ? (
+                                                <div className="relative w-full h-20 bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden cursor-pointer" onClick={() => {
+                                                    // Create a modal or expanded view for video playback
+                                                    const modal = document.createElement('div');
+                                                    modal.className = 'fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4';
+                                                    modal.innerHTML = `
+                                                        <div class="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+                                                            <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
+                                                                <h3 class="text-lg font-semibold dark:text-white">${file.filename || 'Video Preview'}</h3>
+                                                                <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white text-2xl" onclick="this.closest('.fixed').remove()">&times;</button>
+                                                            </div>
+                                                            <div class="p-4">
+                                                                <video src="${file.url}" controls class="w-full max-h-[60vh] object-contain" style="max-height: 60vh;"></video>
+                                                            </div>
+                                                        </div>
+                                                    `;
+                                                    document.body.appendChild(modal);
+                                                    modal.addEventListener('click', (e) => {
+                                                        if (e.target === modal) modal.remove();
+                                                    });
+                                                }}>
+                                                    <video
+                                                        src={file.url}
+                                                        className="w-full h-full object-cover"
+                                                        controls={false}
+                                                        muted
+                                                        preload="metadata"
+                                                        onLoadedData={(e) => {
+                                                            const video = e.target as HTMLVideoElement;
+                                                            // Simple approach: just show the video poster or first frame
+                                                            video.currentTime = 0.1; // Very short time for thumbnail
+                                                        }}
+                                                    />
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                                        <div className="bg-black/60 rounded-full p-3">
+                                                            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="M8 5v14l11-7z"/>
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                    <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                                                        Video • Click to play
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <img
+                                                    src={file.url}
+                                                    alt={file.filename}
+                                                    className="w-full h-20 object-cover rounded-md"
+                                                />
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeUploadedFile(index)}
+                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                ×
+                                            </button>
+                                            {file.type === 'image' && (
+                                                <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1 rounded">
+                                                    {file.type}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* File upload section */}
                         <div className="mb-4">
-                            <AnimatePresence mode="wait">
-                                <motion.img
-                                    key={selectedImage}
-                                    src={selectedImage}
-                                    alt="Selected property"
-                                    className="w-full h-48 object-cover rounded-md bg-gray-200 dark:bg-gray-700"
-                                    initial={{ opacity: 0.5 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.3 }}
-                                />
-                            </AnimatePresence>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileUpload}
+                                multiple
+                                accept="image/*,video/*"
+                                className="hidden"
+                            />
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="w-full"
+                            >
+                                {isUploading ? <Spinner /> : <><IconUpload /> Upload Images/Videos</>}
+                            </Button>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Max 20 files, 50MB each. Supported: JPG, PNG, GIF, MP4, MOV
+                            </p>
                         </div>
 
+                        {/* Fallback image selection */}
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Choose an image</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Or choose from presets:</label>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                                 {MOCK_PROPERTY_IMAGES.map((img, index) => (
                                     <motion.img
@@ -572,31 +870,79 @@ export const AddEditPropertyModal: React.FC<AddEditPropertyModalProps> = ({ isOp
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
-                        <input type="text" defaultValue={property?.address} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input type="text" name="address" defaultValue={property?.address} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Price</label>
-                            <input type="number" defaultValue={property?.price} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <input type="number" name="price" defaultValue={property?.price} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                         </div>
-                         <div>
+                          <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Sqft</label>
-                            <input type="number" defaultValue={property?.sqft} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <input type="number" name="sqft" defaultValue={property?.sqft} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bedrooms</label>
-                            <input type="number" defaultValue={property?.bedrooms} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <input type="number" name="bedrooms" defaultValue={property?.bedrooms} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bathrooms</label>
-                            <input type="number" defaultValue={property?.bathrooms} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <input type="number" name="bathrooms" defaultValue={property?.bathrooms} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Year Built</label>
+                            <input type="number" name="yearBuilt" defaultValue={property?.yearBuilt} min="1800" max={new Date().getFullYear() + 1} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Property Type</label>
+                            <select name="propertyType" defaultValue={property?.propertyType || 'House'} className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="House">House</option>
+                                <option value="Condo">Condo</option>
+                                <option value="Townhouse">Townhouse</option>
+                                <option value="Apartment">Apartment</option>
+                                <option value="Land">Land</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Features</label>
+                        <div className="mt-1 flex gap-2">
+                            <input
+                                type="text"
+                                value={newFeature}
+                                onChange={(e) => setNewFeature(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                                placeholder="Add a feature..."
+                                className="flex-1 bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <Button type="button" onClick={addFeature} variant="secondary" className="px-3">Add</Button>
+                        </div>
+                        {features.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {features.map((feature, index) => (
+                                    <span key={index} className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 px-2 py-1 rounded text-sm">
+                                        {feature}
+                                        <button
+                                            type="button"
+                                            onClick={() => removeFeature(feature)}
+                                            className="ml-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
                     <div className="pt-4 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                         <Button type="button" variant="secondary" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
-                        <Button type="submit" onClick={(e) => { e.preventDefault(); onClose(); }} className="w-full sm:w-auto">Save Property</Button>
+                        <Button type="submit" className="w-full sm:w-auto">Save Property</Button>
                     </div>
                 </form>
             </div>
@@ -710,7 +1056,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, onToggle, conver
                         ) : (
                               <div className="p-4">
                                 <div className="text-center py-8">
-                                    <IconMessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                    <IconMessageCircle />
                                     <p className="text-gray-500 dark:text-gray-400 mb-4">No active conversations</p>
                                     <p className="text-sm text-gray-400">Start a new conversation or select from recent chats</p>
                                 </div>

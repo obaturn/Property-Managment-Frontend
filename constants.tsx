@@ -148,9 +148,9 @@ export const MOCK_LEADS: Lead[] = [
 ];
 
 export const MOCK_PROPERTIES: Property[] = [
-    { id: 1, address: '123 Main St, Anytown, USA', price: 450000, bedrooms: 3, bathrooms: 2, sqft: 1800, imageUrl: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=2070&auto=format&fit=crop', description: 'A beautiful family home in a quiet neighborhood.' },
-    { id: 2, address: '456 Oak Ave, Anytown, USA', price: 650000, bedrooms: 4, bathrooms: 3, sqft: 2500, imageUrl: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=2070&auto=format&fit=crop', description: 'Spacious modern house with a large backyard.' },
-    { id: 3, address: '789 Pine Ln, Anytown, USA', price: 320000, bedrooms: 2, bathrooms: 2, sqft: 1200, imageUrl: 'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?q=80&w=2070&auto=format&fit=crop', description: 'Cozy cottage perfect for a first-time buyer.' },
+    { _id: '507f1f77bcf86cd799439011', address: '123 Main St, Anytown, USA', price: 450000, bedrooms: 3, bathrooms: 2, sqft: 1800, imageUrl: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=2070&auto=format&fit=crop', description: 'A beautiful family home in a quiet neighborhood.', propertyType: 'House', status: 'Available', yearBuilt: 2015, features: ['Hardwood floors', 'Updated kitchen', 'Fenced yard'], createdAt: '2024-01-15T10:30:00.000Z', updatedAt: '2024-01-15T10:30:00.000Z' },
+    { _id: '507f191e810c19729de860ea', address: '456 Oak Ave, Anytown, USA', price: 650000, bedrooms: 4, bathrooms: 3, sqft: 2500, imageUrl: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=2070&auto=format&fit=crop', description: 'Spacious modern house with a large backyard.', propertyType: 'House', status: 'Available', yearBuilt: 2018, features: ['Open floor plan', 'Granite countertops', 'Two-car garage'], createdAt: '2024-01-20T14:45:00.000Z', updatedAt: '2024-01-20T14:45:00.000Z' },
+    { _id: '507f1f77bcf86cd799439012', address: '789 Pine Ln, Anytown, USA', price: 320000, bedrooms: 2, bathrooms: 2, sqft: 1200, imageUrl: 'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?q=80&w=2070&auto=format&fit=crop', description: 'Cozy cottage perfect for a first-time buyer.', propertyType: 'House', status: 'Available', yearBuilt: 1995, features: ['Fireplace', 'Garden', 'Charming details'], createdAt: '2024-02-01T09:15:00.000Z', updatedAt: '2024-02-01T09:15:00.000Z' },
 ];
 
 export const MOCK_PROPERTY_IMAGES: string[] = [

@@ -5,6 +5,7 @@ import type { Meeting, Lead, Property } from '../types';
 import { Page, MeetingStatus, LeadStatus, Agent } from '../types';
 import { MOCK_MEETINGS, MOCK_ANALYTICS_DATA, MOCK_LEADS, MOCK_PROPERTIES, MOCK_CONVERSATIONS, MOCK_AGENTS } from '../constants';
 // import { useLeads } from '../hooks/useLeads';
+import { useProperties } from '../src/hooks/useProperties';
 import {
     StatCard,
     MeetingsLineChart,
@@ -1076,7 +1077,7 @@ export const MeetingsPage: React.FC = () => {
                         <select name="propertyAddress" className="w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                             <option value="">Select a property...</option>
                             {MOCK_PROPERTIES.map(property => (
-                                <option key={property.id} value={property.address}>{property.address}</option>
+                                <option key={property._id} value={property.address}>{property.address}</option>
                             ))}
                         </select>
                     </div>
@@ -1506,7 +1507,7 @@ export const LeadsPage: React.FC = () => {
 
 // Properties Page
 export const PropertiesPage: React.FC = () => {
-    const [properties, setProperties] = useState<Property[]>(MOCK_PROPERTIES);
+    const { properties, loading, error, createProperty, updateProperty, deleteProperty } = useProperties();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -1516,25 +1517,72 @@ export const PropertiesPage: React.FC = () => {
         setSelectedProperty(property);
         setIsModalOpen(true);
     };
-    
+
     const handleAddNewProperty = () => {
         setSelectedProperty(null);
         setIsModalOpen(true);
     };
-    
+
     const handleDeleteProperty = (property: Property) => {
         setPropertyToDelete(property);
         setIsDeleteModalOpen(true);
     };
 
-    const confirmDeleteProperty = () => {
+    const confirmDeleteProperty = async () => {
         if (propertyToDelete) {
-            setProperties(prev => prev.filter(p => p.id !== propertyToDelete.id));
+            try {
+                await deleteProperty(propertyToDelete._id || '');
+                setIsDeleteModalOpen(false);
+                setPropertyToDelete(null);
+            } catch (error) {
+                console.error('Failed to delete property:', error);
+            }
         }
-        setIsDeleteModalOpen(false);
-        setPropertyToDelete(null);
     };
 
+    const handleSaveProperty = async (propertyData: any) => {
+        try {
+            if (selectedProperty) {
+                // Update existing property
+                await updateProperty(selectedProperty._id || '', propertyData);
+            } else {
+                // Create new property
+                await createProperty(propertyData);
+            }
+            setIsModalOpen(false);
+            setSelectedProperty(null);
+        } catch (error) {
+            console.error('Failed to save property:', error);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="p-4 md:p-8 space-y-6">
+                <div className="flex justify-center items-center h-64">
+                    <Spinner className="w-8 h-8" />
+                    <span className="ml-2 text-gray-600 dark:text-gray-400">Loading properties...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-4 md:p-8 space-y-6">
+                <div className="text-center py-12">
+                    <div className="text-red-500 text-lg font-semibold mb-2">Error Loading Properties</div>
+                    <p className="text-gray-600 dark:text-gray-400">{error}</p>
+                    <Button
+                        className="mt-4"
+                        onClick={() => window.location.reload()}
+                    >
+                        Try Again
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 md:p-8 space-y-6">
@@ -1547,18 +1595,19 @@ export const PropertiesPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {properties.map(prop => (
-                    <PropertyCard 
-                        key={prop.id} 
-                        property={prop} 
+                    <PropertyCard
+                        key={prop._id}
+                        property={prop}
                         onEdit={handleEditProperty}
                         onDelete={handleDeleteProperty}
                     />
                 ))}
             </div>
-            <AddEditPropertyModal 
+            <AddEditPropertyModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 property={selectedProperty}
+                onSave={handleSaveProperty}
             />
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}
