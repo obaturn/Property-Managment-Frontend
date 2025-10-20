@@ -7,6 +7,7 @@ import { MOCK_MEETINGS, MOCK_ANALYTICS_DATA, MOCK_LEADS, MOCK_PROPERTIES, MOCK_C
 import { useLeads } from '../src/hooks/useLeads';
 import { useProperties } from '../src/hooks/useProperties';
 import { useMeetings } from '../src/hooks/useMeetings';
+import NotificationBell from '../components/NotificationBell';
 import {
     StatCard,
     MeetingsLineChart,
@@ -785,6 +786,9 @@ export const DashboardPage: React.FC = () => {
 
     const upcomingMeetings = MOCK_MEETINGS.filter(m => new Date(m.dateTime) > new Date()).length;
 
+    // Mock user data for notifications (in real app, get from auth context)
+    const userData = { userId: 'admin-1', userType: 'admin' as const };
+
     const handleCreateLead = async (leadData: any) => {
         // TODO: Implement lead creation logic
         console.log('Creating lead:', leadData);
@@ -812,9 +816,12 @@ export const DashboardPage: React.FC = () => {
 
     return (
         <div className="p-4 md:p-8 space-y-6">
-            <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Good afternoon, John 👋</h1>
-                <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">Here's what's happening today.</p>
+            <div className="flex justify-between items-start">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Good afternoon, John 👋</h1>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base">Here's what's happening today.</p>
+                </div>
+                <NotificationBell userData={userData} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -1185,6 +1192,9 @@ export const MeetingsPage: React.FC = () => {
         clearError
     } = useMeetings();
 
+    // Mock user data for notifications (in real app, get from auth context)
+    const userData = { userId: 'agent-1', userType: 'agent' as const };
+
     const [view, setView] = useState<'list' | 'calendar' | 'week'>('list');
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
     const [filter, setFilter] = useState<FilterStatus>('All');
@@ -1352,6 +1362,7 @@ export const MeetingsPage: React.FC = () => {
                     <p className="text-gray-500 dark:text-gray-400">Manage and view all scheduled meetings.</p>
                 </div>
                 <div className="flex items-center gap-4">
+                    <NotificationBell userData={userData} />
                     <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
                         <IconPlus />
                         New Meeting
@@ -1674,6 +1685,9 @@ export const LeadsPage: React.FC = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
+    // Mock user data for notifications (in real app, get from auth context)
+    const userData = { userId: 'admin-1', userType: 'admin' as const };
+
     const leadColumns = Object.values(LeadStatus);
 
     const handleViewDetails = (lead: Lead) => {
@@ -1793,6 +1807,7 @@ export const LeadsPage: React.FC = () => {
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
                         </div>
                         <div className="flex items-center space-x-3">
+                            <NotificationBell userData={userData} />
                             <Button onClick={() => setIsCreateModalOpen(true)}>
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -2143,6 +2158,9 @@ export const PropertiesPage: React.FC = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [propertyToDelete, setPropertyToDelete] = useState<Property | null>(null);
 
+    // Mock user data for notifications (in real app, get from auth context)
+    const userData = { userId: 'agent-1', userType: 'agent' as const };
+
     const handleEditProperty = (property: Property) => {
         setSelectedProperty(property);
         setIsModalOpen(true);
@@ -2221,7 +2239,10 @@ export const PropertiesPage: React.FC = () => {
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Properties</h1>
                     <p className="text-gray-500 dark:text-gray-400">Manage your property listings.</p>
                 </div>
-                <Button onClick={handleAddNewProperty}><IconPlus /> Add New Property</Button>
+                <div className="flex items-center gap-4">
+                    <NotificationBell userData={userData} />
+                    <Button onClick={handleAddNewProperty}><IconPlus /> Add New Property</Button>
+                </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {properties.map(prop => (
@@ -2253,14 +2274,20 @@ export const PropertiesPage: React.FC = () => {
 
 // Analytics Page
 export const AnalyticsPage: React.FC = () => {
+    // Mock user data for notifications (in real app, get from auth context)
+    const userData = { userId: 'admin-1', userType: 'admin' as const };
+
     return (
         <div className="p-4 md:p-8 space-y-6">
             <div className="flex justify-between items-center">
-                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Analytics</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Insights into your performance and system trends.</p>
-                </div>
-                <Button variant="secondary">Export CSV</Button>
+                  <div>
+                     <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Analytics</h1>
+                     <p className="text-gray-500 dark:text-gray-400">Insights into your performance and system trends.</p>
+                 </div>
+                 <div className="flex items-center gap-4">
+                     <NotificationBell userData={userData} />
+                     <Button variant="secondary">Export CSV</Button>
+                 </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard title="Total Meetings (Month)" value="81" change="+12% from last month" icon={<IconMeetings />} />
@@ -2304,6 +2331,9 @@ export const AdminPanel: React.FC = () => {
     const [agents, setAgents] = useState<Agent[]>(MOCK_AGENTS);
     const [filter, setFilter] = useState<'all' | 'active' | 'top'>('all');
 
+    // Mock user data for notifications (in real app, get from auth context)
+    const userData = { userId: 'admin-1', userType: 'admin' as const };
+
     const filteredAgents = agents.filter(agent => {
         if (filter === 'top') return agent.meetings >= 60;
         return true;
@@ -2316,7 +2346,8 @@ export const AdminPanel: React.FC = () => {
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Admin Panel</h1>
                     <p className="text-gray-500 dark:text-gray-400">Manage agents and view system performance.</p>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex items-center gap-4">
+                    <NotificationBell userData={userData} />
                     <select
                         value={filter}
                         onChange={(e) => setFilter(e.target.value as any)}
@@ -2390,13 +2421,16 @@ export const AdminPanel: React.FC = () => {
 export const SettingsPage: React.FC = () => {
     const [notifications, setNotifications] = useState({ email: true, sms: false, inApp: true });
     const [isNotifSettingsModalOpen, setIsNotifSettingsModalOpen] = useState(false);
-    const [notifCategorySettings, setNotifCategorySettings] = useState({ 
-        leads: true, 
-        meetings: true, 
-        system: true 
+    const [notifCategorySettings, setNotifCategorySettings] = useState({
+        leads: true,
+        meetings: true,
+        system: true
     });
     const [profileImage, setProfileImage] = useState('https://picsum.photos/128');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Mock user data for notifications (in real app, get from auth context)
+    const userData = { userId: 'agent-1', userType: 'agent' as const };
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -2412,9 +2446,12 @@ export const SettingsPage: React.FC = () => {
 
     return (
         <div className="p-4 md:p-8 space-y-8 max-w-4xl mx-auto">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Settings</h1>
-                <p className="text-gray-500 dark:text-gray-400">Personalize notifications and calendar preferences.</p>
+            <div className="flex justify-between items-start">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Settings</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Personalize notifications and calendar preferences.</p>
+                </div>
+                <NotificationBell userData={userData} />
             </div>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Profile</h2>
