@@ -6,6 +6,7 @@ import { Page, MeetingStatus, LeadStatus, Agent, LeadStatus as LeadStatusEnum } 
 import { MOCK_MEETINGS, MOCK_ANALYTICS_DATA, MOCK_LEADS, MOCK_PROPERTIES, MOCK_CONVERSATIONS, MOCK_AGENTS } from '../constants';
 import { useLeads } from '../src/hooks/useLeads';
 import { useProperties } from '../src/hooks/useProperties';
+import { useMeetings } from '../src/hooks/useMeetings';
 import {
     StatCard,
     MeetingsLineChart,
@@ -1170,7 +1171,20 @@ const getStatusDotColor = (status: MeetingStatus) => {
 };
 
 export const MeetingsPage: React.FC = () => {
-    const [meetings, setMeetings] = useState<Meeting[]>(MOCK_MEETINGS);
+    const {
+        meetings,
+        loading,
+        error,
+        fetchMeetings,
+        createMeeting,
+        updateMeeting,
+        deleteMeeting,
+        updateMeetingStatus,
+        getUpcomingMeetings,
+        refreshMeetings,
+        clearError
+    } = useMeetings();
+
     const [view, setView] = useState<'list' | 'calendar' | 'week'>('list');
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
     const [filter, setFilter] = useState<FilterStatus>('All');
@@ -1189,6 +1203,11 @@ export const MeetingsPage: React.FC = () => {
         return meeting.status === filter;
     });
 
+    // Load meetings on component mount
+    useEffect(() => {
+        fetchMeetings();
+    }, [fetchMeetings]);
+
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, meetingId: number) => {
         e.dataTransfer.setData('meetingId', meetingId.toString());
         setDraggedMeetingId(meetingId);
@@ -1203,22 +1222,24 @@ export const MeetingsPage: React.FC = () => {
         setDragOverDate(null);
     };
 
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>, newDate: Date) => {
+    const handleDrop = async (e: React.DragEvent<HTMLDivElement>, newDate: Date) => {
         e.preventDefault();
         const meetingId = parseInt(e.dataTransfer.getData('meetingId'), 10);
-        
-        setMeetings(prevMeetings =>
-            prevMeetings.map(m => {
-                if (m.id === meetingId) {
-                    // Preserve original time, change the date
-                    const newDateTime = new Date(newDate);
-                    newDateTime.setHours(m.dateTime.getHours());
-                    newDateTime.setMinutes(m.dateTime.getMinutes());
-                    return { ...m, dateTime: newDateTime };
-                }
-                return m;
-            })
-        );
+
+        // Find the meeting to update
+        const meetingToUpdate = meetings.find(m => m.id === meetingId);
+        if (!meetingToUpdate) return;
+
+        // Preserve original time, change the date
+        const newDateTime = new Date(newDate);
+        newDateTime.setHours(meetingToUpdate.dateTime.getHours());
+        newDateTime.setMinutes(meetingToUpdate.dateTime.getMinutes());
+
+        // Update via API
+        await updateMeeting(meetingId.toString(), {
+            dateTime: newDateTime.toISOString()
+        });
+
         setDraggedMeetingId(null);
         setDragOverDate(null);
     };
@@ -1285,31 +1306,26 @@ export const MeetingsPage: React.FC = () => {
         setIsRescheduleModalOpen(true);
     };
 
-    const handleCancel = (meeting: Meeting) => {
+    const handleCancel = async (meeting: Meeting) => {
         if (window.confirm(`Are you sure you want to cancel the meeting with ${meeting.leadName}?`)) {
-            setMeetings(prev => prev.map(m =>
-                m.id === meeting.id
-                    ? { ...m, status: MeetingStatus.Missed }
-                    : m
-            ));
+            await updateMeetingStatus(meeting.id.toString(), MeetingStatus.Missed);
         }
     };
 
-    const handleStatusUpdate = (meetingId: number, newStatus: MeetingStatus) => {
-        setMeetings(prev => prev.map(m =>
-            m.id === meetingId ? { ...m, status: newStatus } : m
-        ));
+    const handleStatusUpdate = async (meetingId: number, newStatus: MeetingStatus) => {
+        await updateMeetingStatus(meetingId.toString(), newStatus);
     };
 
-    const handleCreateMeeting = (newMeetingData: Partial<Meeting>) => {
-        const newMeeting: Meeting = {
-            id: Math.max(...meetings.map(m => m.id)) + 1,
+    const handleCreateMeeting = async (newMeetingData: Partial<Meeting>) => {
+        const meetingData = {
             leadName: newMeetingData.leadName || 'New Lead',
             propertyAddress: newMeetingData.propertyAddress || 'TBD',
-            dateTime: newMeetingData.dateTime || new Date(),
-            status: MeetingStatus.Scheduled
+            dateTime: newMeetingData.dateTime?.toISOString() || new Date().toISOString(),
+            status: MeetingStatus.Scheduled,
+            assignedTo: 'John Doe' // Default assigned user
         };
-        setMeetings(prev => [...prev, newMeeting]);
+
+        await createMeeting(meetingData);
         setIsCreateModalOpen(false);
     };
 
@@ -1397,16 +1413,14 @@ export const MeetingsPage: React.FC = () => {
             {/* Reschedule Meeting Modal */}
             <Modal isOpen={isRescheduleModalOpen} onClose={() => setIsRescheduleModalOpen(false)} title="Reschedule Meeting">
                 {meetingToReschedule && (
-                    <form className="space-y-4" onSubmit={(e) => {
+                    <form className="space-y-4" onSubmit={async (e) => {
                         e.preventDefault();
                         const formData = new FormData(e.target as HTMLFormElement);
                         const newDateTime = new Date(`${formData.get('date')}T${formData.get('time')}`);
 
-                        setMeetings(prev => prev.map(m =>
-                            m.id === meetingToReschedule.id
-                                ? { ...m, dateTime: newDateTime }
-                                : m
-                        ));
+                        await updateMeeting(meetingToReschedule.id.toString(), {
+                            dateTime: newDateTime.toISOString()
+                        });
 
                         setIsRescheduleModalOpen(false);
                         setMeetingToReschedule(null);
@@ -1769,129 +1783,131 @@ export const LeadsPage: React.FC = () => {
     }
 
     return (
-        <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
-            {/* Header */}
-            <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Leads</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <Button onClick={() => setIsCreateModalOpen(true)}>
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            New Lead
-                        </Button>
+        <>
+            <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+                {/* Header */}
+                <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Leads</h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                            <Button onClick={() => setIsCreateModalOpen(true)}>
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                New Lead
+                            </Button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Board */}
-            <div className="flex-1 flex overflow-x-auto overflow-y-hidden p-6 space-x-6">
-                {leadColumns.map(status => (
-                    <motion.div
-                        key={status}
-                        className={`bg-gray-100 dark:bg-gray-800 rounded-lg w-80 flex-shrink-0 flex flex-col min-h-0 transition-all duration-200 ${
-                            dragOverColumn === status ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
-                        }`}
-                        onDragOver={(e) => handleDragOver(e, status)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, status)}
-                        animate={{ scale: dragOverColumn === status ? 1.02 : 1 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        {/* Column Header */}
-                        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center justify-between">
-                                <h3 className="font-medium text-gray-900 dark:text-white text-sm uppercase tracking-wide">
-                                    {status}
-                                </h3>
-                                <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium text-gray-500 bg-gray-200 dark:bg-gray-700 rounded-full">
-                                    {leads.filter(l => l.status === status).length}
-                                </span>
+                {/* Board */}
+                <div className="flex-1 flex overflow-x-auto overflow-y-hidden p-6 space-x-6">
+                    {leadColumns.map(status => (
+                        <motion.div
+                            key={status}
+                            className={`bg-gray-100 dark:bg-gray-800 rounded-lg w-80 flex-shrink-0 flex flex-col min-h-0 transition-all duration-200 ${
+                                dragOverColumn === status ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
+                            }`}
+                            onDragOver={(e) => handleDragOver(e, status)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, status)}
+                            animate={{ scale: dragOverColumn === status ? 1.02 : 1 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {/* Column Header */}
+                            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="font-medium text-gray-900 dark:text-white text-sm uppercase tracking-wide">
+                                        {status}
+                                    </h3>
+                                    <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium text-gray-500 bg-gray-200 dark:bg-gray-700 rounded-full">
+                                        {leads.filter(l => l.status === status).length}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Column Content */}
-                        <div className="flex-1 p-2 space-y-3 overflow-y-auto min-h-0">
-                            <AnimatePresence>
-                                {leads.filter(lead => lead.status === status).map(lead => (
-                                    <motion.div
-                                        key={lead.id}
-                                        layout
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                        transition={{ duration: 0.3 }}
-                                        draggable
-                                        onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent<HTMLDivElement>, lead)}
-                                        onDragEnd={handleDragEnd}
-                                        className={`bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 cursor-grab active:cursor-grabbing hover:shadow-md transition-all duration-200 ${
-                                            draggedLead?.id === lead.id ? 'opacity-50 rotate-2 scale-95' : 'opacity-100'
-                                        }`}
-                                    >
-                                        <div className="space-y-3">
-                                            <div>
-                                                <h4 className="font-medium text-gray-900 dark:text-white text-sm">{lead.name}</h4>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{lead.email}</p>
-                                            </div>
-
-                                            <div className="flex items-center justify-between text-xs">
-                                                <span className="text-gray-500 dark:text-gray-400">{lead.source}</span>
-                                                <span className="text-gray-400 dark:text-gray-500">
-                                                    {lead.lastContacted.toLocaleDateString()}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center space-x-2">
-                                                    <img
-                                                        src={`https://i.pravatar.cc/24?u=${lead.email}`}
-                                                        alt={lead.assignedTo}
-                                                        className="w-6 h-6 rounded-full"
-                                                        title={`Assigned to ${lead.assignedTo}`}
-                                                    />
-                                                    <span className="text-xs text-gray-500 dark:text-gray-400">{lead.phone}</span>
+                            {/* Column Content */}
+                            <div className="flex-1 p-2 space-y-3 overflow-y-auto min-h-0">
+                                <AnimatePresence>
+                                    {leads.filter(lead => lead.status === status).map(lead => (
+                                        <motion.div
+                                            key={lead.id}
+                                            layout
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -20 }}
+                                            transition={{ duration: 0.3 }}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent<HTMLDivElement>, lead)}
+                                            onDragEnd={handleDragEnd}
+                                            className={`bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 cursor-grab active:cursor-grabbing hover:shadow-md transition-all duration-200 ${
+                                                draggedLead?.id === lead.id ? 'opacity-50 rotate-2 scale-95' : 'opacity-100'
+                                            }`}
+                                        >
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <h4 className="font-medium text-gray-900 dark:text-white text-sm">{lead.name}</h4>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{lead.email}</p>
                                                 </div>
-                                                <div className="flex space-x-1">
-                                                    <button
-                                                        onClick={() => handleViewDetails(lead)}
-                                                        className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1"
-                                                        title="View Details"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteLead(lead)}
-                                                        className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1"
-                                                        title="Delete Lead"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                        </svg>
-                                                    </button>
+
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <span className="text-gray-500 dark:text-gray-400">{lead.source}</span>
+                                                    <span className="text-gray-400 dark:text-gray-500">
+                                                        {lead.lastContacted.toLocaleDateString()}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center space-x-2">
+                                                        <img
+                                                            src={`https://i.pravatar.cc/24?u=${lead.email}`}
+                                                            alt={lead.assignedTo}
+                                                            className="w-6 h-6 rounded-full"
+                                                            title={`Assigned to ${lead.assignedTo}`}
+                                                        />
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400">{lead.phone}</span>
+                                                    </div>
+                                                    <div className="flex space-x-1">
+                                                        <button
+                                                            onClick={() => handleViewDetails(lead)}
+                                                            className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1"
+                                                            title="View Details"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                            </svg>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteLead(lead)}
+                                                            className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1"
+                                                            title="Delete Lead"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
 
-                            {/* Add Card Button */}
-                            <button
-                                onClick={() => setIsCreateModalOpen(true)}
-                                className="w-full p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm font-medium"
-                            >
-                                + Add Lead
-                            </button>
-                        </div>
-                    </motion.div>
-                ))}
+                                {/* Add Card Button */}
+                                <button
+                                    onClick={() => setIsCreateModalOpen(true)}
+                                    className="w-full p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm font-medium"
+                                >
+                                    + Add Lead
+                                </button>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
             </div>
 
             {/* Create Lead Modal */}
@@ -2115,7 +2131,7 @@ export const LeadsPage: React.FC = () => {
             >
                 Are you sure you want to delete the lead "{leadToDelete?.name}"? This action cannot be undone.
             </ConfirmationModal>
-        </div>
+        </>
     );
 };
 
