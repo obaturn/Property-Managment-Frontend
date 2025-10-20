@@ -48,7 +48,7 @@ export const IconMoon = () => <svg xmlns="http://www.w3.org/2000/svg" className=
 export const IconClose = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>;
 export const IconCalendar = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
 export const IconList = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>;
-export const IconChevronDown = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>;
+export const IconChevronDown = ({ className = "h-5 w-5" }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>;
 export const IconExternalLink = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>;
 export const IconTrophy = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3a2 2 0 012-2h10a2 2 0 012 2v2a2 2 0 01-2 2h-2m-4 0v10m0 0a2 2 0 002 2h2a2 2 0 002-2m-6 0a2 2 0 01-2-2v-2a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2m-6 0h6m-3-10V5m0 0a2 2 0 012-2h2a2 2 0 012 2v2m-6 0h6" /></svg>;
 // Fix: Updated IconCalendarCheck to accept a className prop.
@@ -492,18 +492,19 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead }) => {
 
 // PropertyCard Component
 interface PropertyCardProps {
-    property: Property;
-    onEdit: (property: Property) => void;
-    onDelete: (property: Property) => void;
+     property: Property;
+     onEdit: (property: Property) => void;
+     onDelete: (property: Property) => void;
 }
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onEdit, onDelete }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const videoRef = useRef<HTMLVideoElement>(null);
+     const [isPlaying, setIsPlaying] = useState(false);
+     const videoRef = useRef<HTMLVideoElement>(null);
 
-    // Get the primary image - prefer uploaded images, fallback to imageUrl
-    const primaryImage = property.images && property.images.length > 0
-        ? property.images[0].url
-        : property.imageUrl;
+     // Get the primary image - prefer uploaded images, fallback to imageUrl
+     // Only use imageUrl if no images array exists OR if images array is empty
+     const primaryImage = (property.images && property.images.length > 0)
+       ? property.images[0].url
+       : property.imageUrl;
 
     const hasVideo = property.images && property.images.some(img => img.type === 'video');
     const videoFile = property.images?.find(img => img.type === 'video');
@@ -566,7 +567,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onEdit, on
                     )
                 ) : (
                     <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                        <span className="text-gray-500 dark:text-gray-400">No Image</span>
+                        <span className="text-gray-500 dark:text-gray-400">No Image Available</span>
                     </div>
                 )}
 
@@ -639,6 +640,8 @@ export const AddEditPropertyModal: React.FC<AddEditPropertyModalProps> = ({ isOp
     const [features, setFeatures] = useState<string[]>(property?.features || []);
     const [newFeature, setNewFeature] = useState('');
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -647,6 +650,13 @@ export const AddEditPropertyModal: React.FC<AddEditPropertyModalProps> = ({ isOp
             setUploadedFiles(property?.images || []);
             setFeatures(property?.features || []);
             setNewFeature('');
+            setUploadProgress(0);
+            setIsSaving(false);
+        } else {
+            // Clean up blob URLs when modal closes
+            uploadedFiles.forEach(file => {
+                URL.revokeObjectURL(file.url);
+            });
         }
     }, [isOpen, property]);
 
@@ -665,85 +675,173 @@ export const AddEditPropertyModal: React.FC<AddEditPropertyModalProps> = ({ isOp
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
-        // Validate file types and sizes
-        const validFiles: File[] = [];
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            if ((file.type.startsWith('image/') || file.type.startsWith('video/')) && file.size <= 50 * 1024 * 1024) {
-                validFiles.push(file);
+        setIsUploading(true);
+
+        try {
+            // Validate file types and sizes
+            const validFiles: File[] = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if ((file.type.startsWith('image/') || file.type.startsWith('video/')) && file.size <= 50 * 1024 * 1024) {
+                    validFiles.push(file);
+                } else if (file.size > 50 * 1024 * 1024) {
+                    alert(`File "${file.name}" is too large. Maximum size is 50MB.`);
+                } else {
+                    alert(`File "${file.name}" is not a supported format. Please use images or videos.`);
+                }
             }
-        }
 
-        if (validFiles.length === 0) {
-            alert('Please select valid image or video files (max 50MB each)');
-            return;
-        }
-
-        // If editing existing property, upload files immediately
-        if (property?._id) {
-            setIsUploading(true);
-            try {
-                const fileList = new DataTransfer();
-                validFiles.forEach(file => fileList.items.add(file));
-
-                // Import the hook here to avoid circular dependency
-                const { useProperties } = await import('../src/hooks/useProperties');
-                // This is a workaround - in real app, pass uploadPropertyFiles as prop
-                const tempHook = { uploadPropertyFiles: async (id: string, fl: FileList) => {
-                    // This would normally be handled by the hook
-                    console.log('Uploading files for property:', id, fl);
-                }};
-
-                await tempHook.uploadPropertyFiles(property._id, fileList.files);
-                // Refresh uploaded files list
-                setUploadedFiles(prev => [...prev, ...validFiles.map(f => ({
-                    url: URL.createObjectURL(f),
-                    type: f.type.startsWith('video/') ? 'video' as const : 'image' as const,
-                    filename: f.name,
-                    size: f.size
-                }))]);
-            } catch (error) {
-                console.error('Upload failed:', error);
-                alert('Failed to upload files. Please try again.');
-            } finally {
-                setIsUploading(false);
+            if (validFiles.length === 0) {
+                return;
             }
-        } else {
-            // For new properties, just add to local state
+
+            // For both new and existing properties, just add to local state with blob URLs for preview
+            // The actual upload to Cloudinary will happen when the form is saved
             setUploadedFiles(prev => [...prev, ...validFiles.map(f => ({
                 url: URL.createObjectURL(f),
                 type: f.type.startsWith('video/') ? 'video' as const : 'image' as const,
                 filename: f.name,
                 size: f.size
             }))]);
+        } catch (error) {
+            console.error('File upload error:', error);
+            alert('Failed to process uploaded files. Please try again.');
+        } finally {
+            setIsUploading(false);
         }
     };
 
     const removeUploadedFile = (index: number) => {
-        setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+        setUploadedFiles(prev => {
+            const newFiles = prev.filter((_, i) => i !== index);
+            // Clean up blob URL for removed file
+            const removedFile = prev[index];
+            if (removedFile) {
+                URL.revokeObjectURL(removedFile.url);
+            }
+            return newFiles;
+        });
     };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={property ? "Edit Property" : "Add New Property"} size="lg">
             <div className="max-h-[80vh] overflow-y-auto">
-                <form className="space-y-4" onSubmit={(e) => {
+                <form className="space-y-4" onSubmit={async (e) => {
                     e.preventDefault();
                     const formData = new FormData(e.target as HTMLFormElement);
-                    const propertyData = {
-                        address: formData.get('address') as string,
-                        price: parseFloat(formData.get('price') as string),
-                        bedrooms: parseInt(formData.get('bedrooms') as string) || undefined,
-                        bathrooms: parseInt(formData.get('bathrooms') as string) || undefined,
-                        sqft: parseInt(formData.get('sqft') as string) || undefined,
-                        yearBuilt: parseInt(formData.get('yearBuilt') as string) || undefined,
-                        description: formData.get('description') as string || undefined,
-                        imageUrl: selectedImage,
-                        images: uploadedFiles,
-                        propertyType: formData.get('propertyType') as Property['propertyType'] || 'House',
-                        status: 'Available' as const,
-                        features: features.length > 0 ? features : undefined
-                    };
-                    onSave ? onSave(propertyData) : onClose();
+
+                    // Prepare property data - ensure required fields are present
+                    const address = formData.get('address') as string;
+                    const priceStr = formData.get('price') as string;
+                    const price = parseFloat(priceStr);
+
+                    if (!address || !address.trim()) {
+                        alert('Address is required');
+                        return;
+                    }
+
+                    if (!priceStr || isNaN(price) || price <= 0) {
+                        alert('Valid price is required');
+                        return;
+                    }
+
+                    // Check if we have uploaded files
+                    if (uploadedFiles.length > 0) {
+                        // Create FormData for file upload
+                        const submitFormData = new FormData();
+
+                        // Add property data as JSON string
+                        const propertyData = {
+                            address: address.trim(),
+                            price: price,
+                            bedrooms: formData.get('bedrooms') ? parseInt(formData.get('bedrooms') as string) : undefined,
+                            bathrooms: formData.get('bathrooms') ? parseInt(formData.get('bathrooms') as string) : undefined,
+                            sqft: formData.get('sqft') ? parseInt(formData.get('sqft') as string) : undefined,
+                            yearBuilt: formData.get('yearBuilt') ? parseInt(formData.get('yearBuilt') as string) : undefined,
+                            description: formData.get('description') as string || undefined,
+                            propertyType: formData.get('propertyType') as Property['propertyType'] || 'House',
+                            status: 'Available' as const,
+                            features: features.length > 0 ? features : undefined
+                        };
+
+                        submitFormData.append('data', JSON.stringify(propertyData));
+
+                        // Convert blob URLs to actual files and add to FormData
+                        const filePromises = uploadedFiles.map(async (file, index) => {
+                            try {
+                                const response = await fetch(file.url);
+                                const blob = await response.blob();
+                                const actualFile = new File([blob], file.filename || `file_${index}`, {
+                                    type: file.type === 'video' ? 'video/mp4' : 'image/jpeg'
+                                });
+                                submitFormData.append('files', actualFile);
+                            } catch (error) {
+                                console.error(`Failed to process file ${file.filename}:`, error);
+                                // Continue with other files
+                            }
+                        });
+
+                        // Wait for all file conversions to complete
+                        await Promise.all(filePromises);
+
+                        try {
+                            setIsSaving(true);
+                            setUploadProgress(50);
+
+                            // Save the property with files
+                            if (onSave) {
+                                await onSave(submitFormData);
+                            }
+
+                            setUploadProgress(100);
+
+                            // Clean up blob URLs to free memory
+                            uploadedFiles.forEach(file => {
+                                URL.revokeObjectURL(file.url);
+                            });
+
+                            alert('Property saved successfully with uploaded images!');
+                            onClose();
+                        } catch (error) {
+                            console.error('Save failed:', error);
+                            alert('Failed to save property. Please try again.');
+                        } finally {
+                            setIsSaving(false);
+                            setUploadProgress(0);
+                        }
+                    } else {
+                        // No files uploaded, use regular JSON submission
+                        const propertyData = {
+                            address: address.trim(),
+                            price: price,
+                            bedrooms: formData.get('bedrooms') ? parseInt(formData.get('bedrooms') as string) : undefined,
+                            bathrooms: formData.get('bathrooms') ? parseInt(formData.get('bathrooms') as string) : undefined,
+                            sqft: formData.get('sqft') ? parseInt(formData.get('sqft') as string) : undefined,
+                            yearBuilt: formData.get('yearBuilt') ? parseInt(formData.get('yearBuilt') as string) : undefined,
+                            description: formData.get('description') as string || undefined,
+                            images: selectedImage ? [{ url: selectedImage, type: 'image' as const }] : [],
+                            propertyType: formData.get('propertyType') as Property['propertyType'] || 'House',
+                            status: 'Available' as const,
+                            features: features.length > 0 ? features : undefined
+                        };
+
+                        try {
+                            setIsSaving(true);
+
+                            // Save the property without files
+                            if (onSave) {
+                                await onSave(propertyData);
+                            }
+
+                            alert('Property saved successfully!');
+                            onClose();
+                        } catch (error) {
+                            console.error('Save failed:', error);
+                            alert('Failed to save property. Please try again.');
+                        } finally {
+                            setIsSaving(false);
+                        }
+                    }
                 }}>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Property Images & Videos</label>
@@ -751,7 +849,7 @@ export const AddEditPropertyModal: React.FC<AddEditPropertyModalProps> = ({ isOp
                         {/* Display uploaded files */}
                         {uploadedFiles.length > 0 && (
                             <div className="mb-4">
-                                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Uploaded Files:</h4>
+                                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Uploaded Files Preview:</h4>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                                     {uploadedFiles.map((file, index) => (
                                         <div key={index} className="relative group">
@@ -942,7 +1040,16 @@ export const AddEditPropertyModal: React.FC<AddEditPropertyModalProps> = ({ isOp
                     </div>
                     <div className="pt-4 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                         <Button type="button" variant="secondary" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
-                        <Button type="submit" className="w-full sm:w-auto">Save Property</Button>
+                        <Button type="submit" className="w-full sm:w-auto" disabled={isSaving}>
+                            {isSaving ? (
+                                <>
+                                    <Spinner className="w-4 h-4 mr-2" />
+                                    {uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : 'Saving...'}
+                                </>
+                            ) : (
+                                'Save Property'
+                            )}
+                        </Button>
                     </div>
                 </form>
             </div>

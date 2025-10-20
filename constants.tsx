@@ -7,7 +7,7 @@ export const NAV_ITEMS = [
   { page: Page.Properties, label: 'Properties' },
   { page: Page.Analytics, label: 'Analytics' },
   { page: Page.Settings, label: 'Settings' },
-  { page: 'Admin' as any, label: 'Admin' },
+  { page: Page.Admin, label: 'Admin' },
 ];
 
 export const MOCK_MEETINGS: Meeting[] = [

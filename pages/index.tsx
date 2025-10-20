@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 // Fix: Import Variants type from framer-motion to resolve type error.
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import type { Meeting, Lead, Property } from '../types';
-import { Page, MeetingStatus, LeadStatus, Agent } from '../types';
+import { Page, MeetingStatus, LeadStatus, Agent, LeadStatus as LeadStatusEnum } from '../types';
 import { MOCK_MEETINGS, MOCK_ANALYTICS_DATA, MOCK_LEADS, MOCK_PROPERTIES, MOCK_CONVERSATIONS, MOCK_AGENTS } from '../constants';
-// import { useLeads } from '../hooks/useLeads';
+import { useLeads } from '../src/hooks/useLeads';
 import { useProperties } from '../src/hooks/useProperties';
 import {
     StatCard,
@@ -773,9 +773,42 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onWalletSignup
     );
 };
 
+
 // Dashboard Page
 export const DashboardPage: React.FC = () => {
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+
     const upcomingMeetings = MOCK_MEETINGS.filter(m => new Date(m.dateTime) > new Date()).length;
+
+    const handleCreateLead = async (leadData: any) => {
+        // TODO: Implement lead creation logic
+        console.log('Creating lead:', leadData);
+        setIsCreateModalOpen(false);
+    };
+
+    const confirmDeleteLead = async () => {
+        if (leadToDelete) {
+            // TODO: Implement lead deletion logic
+            console.log('Deleting lead:', leadToDelete.name);
+            setIsDeleteModalOpen(false);
+            setLeadToDelete(null);
+        }
+    };
+
+    const handleViewDetails = (lead: Lead) => {
+        setSelectedLead(lead);
+        setIsDetailsModalOpen(true);
+    };
+
+    const handleDeleteLead = (lead: Lead) => {
+        setLeadToDelete(lead);
+        setIsDeleteModalOpen(true);
+    };
+
     return (
         <div className="p-4 md:p-8 space-y-6">
             <div>
@@ -784,44 +817,44 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                 <StatCard title="Total Meetings Today" value="5" change="+2 from yesterday" icon={<IconMeetings />} />
-                 <StatCard title="Upcoming Meetings" value={`${upcomingMeetings}`} icon={<IconCalendar />} />
-                 <StatCard title="New Leads This Week" value="12" change="+5.4%" icon={<IconDashboard />} />
-                 <motion.div
-                     className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-lg shadow-md flex items-center space-x-4 cursor-pointer hover:shadow-lg transition-shadow"
-                     whileHover={{ scale: 1.02 }}
-                     onClick={() => {/* Could open a detailed rewards modal */}}
-                 >
-                    <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white p-2 md:p-3 rounded-full shadow-lg">
-                       <IconTrophy />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Web3 Rewards Earned</p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">32 REA Tokens</p>
-                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 mt-1">
-                            <span className="text-xs bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-2 py-1 rounded-full w-fit">
-                                +5 this week
-                            </span>
-                            <motion.a
-                                href="#"
-                                className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 flex items-center space-x-1"
-                                whileHover={{ x: 2 }}
-                            >
-                                <span>View on Blockchain</span>
-                                <IconExternalLink />
-                            </motion.a>
-                        </div>
-                    </div>
-                    <motion.div
-                        className="text-right hidden sm:block"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.5 }}
-                    >
-                        <div className="text-xs text-gray-400">Level</div>
-                        <div className="text-lg font-bold text-purple-600 dark:text-purple-400">Gold</div>
-                    </motion.div>
-                </motion.div>
+                  <StatCard title="Total Meetings Today" value="5" change="+2 from yesterday" icon={<IconMeetings />} />
+                  <StatCard title="Upcoming Meetings" value={`${upcomingMeetings}`} icon={<IconCalendar />} />
+                  <StatCard title="New Leads This Week" value="12" change="+5.4%" icon={<IconDashboard />} />
+                  <motion.div
+                      className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-lg shadow-md flex items-center space-x-4 cursor-pointer hover:shadow-lg transition-shadow"
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => {/* Could open a detailed rewards modal */}}
+                  >
+                     <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white p-2 md:p-3 rounded-full shadow-lg">
+                        <IconTrophy />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                         <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Web3 Rewards Earned</p>
+                         <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">32 REA Tokens</p>
+                         <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 mt-1">
+                             <span className="text-xs bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-2 py-1 rounded-full w-fit">
+                                 +5 this week
+                             </span>
+                             <motion.a
+                                 href="#"
+                                 className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 flex items-center space-x-1"
+                                 whileHover={{ x: 2 }}
+                             >
+                                 <span>View on Blockchain</span>
+                                 <IconExternalLink />
+                             </motion.a>
+                         </div>
+                     </div>
+                     <motion.div
+                         className="text-right hidden sm:block"
+                         initial={{ opacity: 0, scale: 0.8 }}
+                         animate={{ opacity: 1, scale: 1 }}
+                         transition={{ delay: 0.5 }}
+                     >
+                         <div className="text-xs text-gray-400">Level</div>
+                         <div className="text-lg font-bold text-purple-600 dark:text-purple-400">Gold</div>
+                     </motion.div>
+                 </motion.div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -843,23 +876,286 @@ export const DashboardPage: React.FC = () => {
                     </div>
                 </div>
             </div>
-             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                 <h3 className="font-bold text-lg mb-4 text-gray-800 dark:text-white">Upcoming Meetings</h3>
                 <div className="space-y-4">
                     {MOCK_MEETINGS.filter(m => new Date(m.dateTime) > new Date()).slice(0, 4).map(meeting => (
-                         <div key={meeting.id} className="flex justify-between items-center text-sm">
-                             <div>
-                                 <p className="font-semibold text-gray-700 dark:text-gray-300">{meeting.leadName}</p>
-                                 <p className="text-gray-500 dark:text-gray-400">{meeting.propertyAddress.substring(0,30)}...</p>
-                             </div>
-                             <p className="text-gray-600 dark:text-gray-300">{meeting.dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                         </div>
-                     ))}
+                          <div key={meeting.id} className="flex justify-between items-center text-sm">
+                              <div>
+                                  <p className="font-semibold text-gray-700 dark:text-gray-300">{meeting.leadName}</p>
+                                  <p className="text-gray-500 dark:text-gray-400">{meeting.propertyAddress.substring(0,30)}...</p>
+                              </div>
+                              <p className="text-gray-600 dark:text-gray-300">{meeting.dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                      ))}
                 </div>
             </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 className="font-bold text-lg mb-4 text-gray-800 dark:text-white">Quick Actions</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Button
+                        variant="secondary"
+                        onClick={() => window.location.hash = '#/meetings'}
+                        className="flex items-center justify-center space-x-2 h-12"
+                    >
+                        <IconCalendar />
+                        <span>Schedule Meeting</span>
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => window.location.hash = '#/properties'}
+                        className="flex items-center justify-center space-x-2 h-12"
+                    >
+                        <IconBuilding />
+                        <span>Add Property</span>
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => window.location.hash = '#/leads'}
+                        className="flex items-center justify-center space-x-2 h-12"
+                    >
+                        <IconUsers />
+                        <span>View Leads</span>
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => window.location.hash = '#/analytics'}
+                        className="flex items-center justify-center space-x-2 h-12"
+                    >
+                        <IconAnalytics />
+                        <span>View Analytics</span>
+                    </Button>
+                </div>
+            </div>
+
+            {/* Create Lead Modal */}
+            <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create New Lead">
+                <form className="space-y-4" onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target as HTMLFormElement);
+                    handleCreateLead({
+                        name: formData.get('name') as string,
+                        email: formData.get('email') as string,
+                        phone: formData.get('phone') as string,
+                        status: LeadStatusEnum.New,
+                        source: formData.get('source') as string,
+                        assignedTo: formData.get('assignedTo') as string,
+                        lastContacted: new Date(),
+                        budget: parseInt(formData.get('budget') as string) || undefined,
+                        preferredPropertyType: formData.get('preferredPropertyType') as string || undefined,
+                        timeline: formData.get('timeline') as string || undefined,
+                        notes: formData.get('notes') as string || undefined
+                    });
+                }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name *</label>
+                            <input
+                                type="text"
+                                name="name"
+                                required
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="John Doe"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email *</label>
+                            <input
+                                type="email"
+                                name="email"
+                                required
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="john@example.com"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                            <input
+                                type="tel"
+                                name="phone"
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="+1 (555) 123-4567"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Source *</label>
+                            <select
+                                name="source"
+                                required
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Select source</option>
+                                <option value="Zillow">Zillow</option>
+                                <option value="Realtor.com">Realtor.com</option>
+                                <option value="Website">Website</option>
+                                <option value="Referral">Referral</option>
+                                <option value="Organic">Organic</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Assigned To *</label>
+                            <input
+                                type="text"
+                                name="assignedTo"
+                                defaultValue="John Doe"
+                                required
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Budget</label>
+                            <input
+                                type="number"
+                                name="budget"
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="500000"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Property Type</label>
+                            <select
+                                name="preferredPropertyType"
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Select type</option>
+                                <option value="House">House</option>
+                                <option value="Condo">Condo</option>
+                                <option value="Townhouse">Townhouse</option>
+                                <option value="Apartment">Apartment</option>
+                                <option value="Land">Land</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Timeline</label>
+                            <select
+                                name="timeline"
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Select timeline</option>
+                                <option value="Immediate">Immediate</option>
+                                <option value="1 month">1 month</option>
+                                <option value="3 months">3 months</option>
+                                <option value="6 months">6 months</option>
+                                <option value="1 year">1 year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                        <textarea
+                            name="notes"
+                            rows={3}
+                            className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Additional notes about the lead..."
+                        />
+                    </div>
+
+                    <div className="pt-4 flex justify-end space-x-2">
+                        <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+                        <Button type="submit">Create Lead</Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Lead Details Modal */}
+            <Modal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} title="Lead Details">
+                {selectedLead && (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.name}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.email}</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.phone || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Source</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.source}</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    selectedLead.status === 'New' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                                    selectedLead.status === 'Contacted' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
+                                    selectedLead.status === 'Nurturing' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' :
+                                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                }`}>
+                                    {selectedLead.status}
+                                </span>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned To</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.assignedTo}</p>
+                            </div>
+                        </div>
+                        {selectedLead.budget && (
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Budget</p>
+                                <p className="text-lg text-gray-900 dark:text-white">${selectedLead.budget.toLocaleString()}</p>
+                            </div>
+                        )}
+                        {selectedLead.preferredPropertyType && (
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Preferred Property Type</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.preferredPropertyType}</p>
+                            </div>
+                        )}
+                        {selectedLead.timeline && (
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Timeline</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.timeline}</p>
+                            </div>
+                        )}
+                        {selectedLead.notes && (
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Notes</p>
+                                <p className="text-gray-900 dark:text-white">{selectedLead.notes}</p>
+                            </div>
+                        )}
+                        <div className="pt-4 flex justify-end space-x-2">
+                            <Button variant="secondary" onClick={() => setIsDetailsModalOpen(false)}>Close</Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDeleteLead}
+                title="Delete Lead"
+            >
+                Are you sure you want to delete the lead "{leadToDelete?.name}"? This action cannot be undone.
+            </ConfirmationModal>
         </div>
     );
 };
+
+
 
 // Meetings Page
 type FilterStatus = 'All' | MeetingStatus;
@@ -1355,11 +1651,47 @@ export const MeetingsPage: React.FC = () => {
 
 // Leads Page
 export const LeadsPage: React.FC = () => {
-    const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
+    const { leads, loading, error, updateLeadStatus, createLead, deleteLead } = useLeads();
     const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
     const [dragOverColumn, setDragOverColumn] = useState<LeadStatus | null>(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
     const leadColumns = Object.values(LeadStatus);
+
+    const handleViewDetails = (lead: Lead) => {
+        setSelectedLead(lead);
+        setIsDetailsModalOpen(true);
+    };
+
+    const handleDeleteLead = (lead: Lead) => {
+        setLeadToDelete(lead);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDeleteLead = async () => {
+        if (leadToDelete) {
+            try {
+                await deleteLead((leadToDelete as any)._id || '');
+                setIsDeleteModalOpen(false);
+                setLeadToDelete(null);
+            } catch (error) {
+                console.error('Failed to delete lead:', error);
+            }
+        }
+    };
+
+    const handleCreateLead = async (leadData: any) => {
+        try {
+            await createLead(leadData);
+            setIsCreateModalOpen(false);
+        } catch (error) {
+            console.error('Failed to create lead:', error);
+        }
+    };
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, lead: Lead) => {
         setDraggedLead(lead);
@@ -1375,16 +1707,14 @@ export const LeadsPage: React.FC = () => {
         setDragOverColumn(null);
     };
 
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>, newStatus: LeadStatus) => {
+    const handleDrop = async (e: React.DragEvent<HTMLDivElement>, newStatus: LeadStatus) => {
         e.preventDefault();
         if (draggedLead && draggedLead.status !== newStatus) {
-            setLeads(prevLeads =>
-                prevLeads.map(lead =>
-                    lead.id === draggedLead.id
-                        ? { ...lead, status: newStatus }
-                        : lead
-                )
-            );
+            try {
+                await updateLeadStatus((draggedLead as any)._id || '', newStatus);
+            } catch (error) {
+                console.error('Failed to update lead status:', error);
+            }
         }
         setDraggedLead(null);
         setDragOverColumn(null);
@@ -1394,6 +1724,49 @@ export const LeadsPage: React.FC = () => {
         setDraggedLead(null);
         setDragOverColumn(null);
     };
+
+    if (loading) {
+        return (
+            <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+                <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Leads</h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="flex items-center space-x-3">
+                        <Spinner className="w-6 h-6" />
+                        <span className="text-gray-600 dark:text-gray-400">Loading leads...</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+                <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Leads</h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="text-red-500 text-lg font-semibold mb-2">Error Loading Leads</div>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+                        <Button onClick={() => window.location.reload()}>Try Again</Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
@@ -1405,12 +1778,12 @@ export const LeadsPage: React.FC = () => {
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
                     </div>
                     <div className="flex items-center space-x-3">
-                        <button className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <Button onClick={() => setIsCreateModalOpen(true)}>
                             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
                             New Lead
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -1482,11 +1855,27 @@ export const LeadsPage: React.FC = () => {
                                                     />
                                                     <span className="text-xs text-gray-500 dark:text-gray-400">{lead.phone}</span>
                                                 </div>
-                                                <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                                    </svg>
-                                                </button>
+                                                <div className="flex space-x-1">
+                                                    <button
+                                                        onClick={() => handleViewDetails(lead)}
+                                                        className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1"
+                                                        title="View Details"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteLead(lead)}
+                                                        className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1"
+                                                        title="Delete Lead"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -1494,13 +1883,238 @@ export const LeadsPage: React.FC = () => {
                             </AnimatePresence>
 
                             {/* Add Card Button */}
-                            <button className="w-full p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm font-medium">
+                            <button
+                                onClick={() => setIsCreateModalOpen(true)}
+                                className="w-full p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm font-medium"
+                            >
                                 + Add Lead
                             </button>
                         </div>
                     </motion.div>
                 ))}
             </div>
+
+            {/* Create Lead Modal */}
+            <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create New Lead">
+                <form className="space-y-4" onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target as HTMLFormElement);
+                    handleCreateLead({
+                        name: formData.get('name') as string,
+                        email: formData.get('email') as string,
+                        phone: formData.get('phone') as string,
+                        status: LeadStatusEnum.New,
+                        source: formData.get('source') as string,
+                        assignedTo: formData.get('assignedTo') as string,
+                        lastContacted: new Date(),
+                        budget: parseInt(formData.get('budget') as string) || undefined,
+                        preferredPropertyType: formData.get('preferredPropertyType') as string || undefined,
+                        timeline: formData.get('timeline') as string || undefined,
+                        notes: formData.get('notes') as string || undefined
+                    });
+                }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name *</label>
+                            <input
+                                type="text"
+                                name="name"
+                                required
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="John Doe"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email *</label>
+                            <input
+                                type="email"
+                                name="email"
+                                required
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="john@example.com"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                            <input
+                                type="tel"
+                                name="phone"
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="+1 (555) 123-4567"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Source *</label>
+                            <select
+                                name="source"
+                                required
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Select source</option>
+                                <option value="Zillow">Zillow</option>
+                                <option value="Realtor.com">Realtor.com</option>
+                                <option value="Website">Website</option>
+                                <option value="Referral">Referral</option>
+                                <option value="Organic">Organic</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Assigned To *</label>
+                            <input
+                                type="text"
+                                name="assignedTo"
+                                defaultValue="John Doe"
+                                required
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Budget</label>
+                            <input
+                                type="number"
+                                name="budget"
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="500000"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Property Type</label>
+                            <select
+                                name="preferredPropertyType"
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Select type</option>
+                                <option value="House">House</option>
+                                <option value="Condo">Condo</option>
+                                <option value="Townhouse">Townhouse</option>
+                                <option value="Apartment">Apartment</option>
+                                <option value="Land">Land</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Timeline</label>
+                            <select
+                                name="timeline"
+                                className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Select timeline</option>
+                                <option value="Immediate">Immediate</option>
+                                <option value="1 month">1 month</option>
+                                <option value="3 months">3 months</option>
+                                <option value="6 months">6 months</option>
+                                <option value="1 year">1 year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                        <textarea
+                            name="notes"
+                            rows={3}
+                            className="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Additional notes about the lead..."
+                        />
+                    </div>
+
+                    <div className="pt-4 flex justify-end space-x-2">
+                        <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+                        <Button type="submit">Create Lead</Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Lead Details Modal */}
+            <Modal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} title="Lead Details">
+                {selectedLead && (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.name}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.email}</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.phone || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Source</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.source}</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    selectedLead.status === 'New' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                                    selectedLead.status === 'Contacted' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
+                                    selectedLead.status === 'Nurturing' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' :
+                                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                }`}>
+                                    {selectedLead.status}
+                                </span>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned To</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.assignedTo}</p>
+                            </div>
+                        </div>
+                        {selectedLead.budget && (
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Budget</p>
+                                <p className="text-lg text-gray-900 dark:text-white">${selectedLead.budget.toLocaleString()}</p>
+                            </div>
+                        )}
+                        {selectedLead.preferredPropertyType && (
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Preferred Property Type</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.preferredPropertyType}</p>
+                            </div>
+                        )}
+                        {selectedLead.timeline && (
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Timeline</p>
+                                <p className="text-lg text-gray-900 dark:text-white">{selectedLead.timeline}</p>
+                            </div>
+                        )}
+                        {selectedLead.notes && (
+                            <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Notes</p>
+                                <p className="text-gray-900 dark:text-white">{selectedLead.notes}</p>
+                            </div>
+                        )}
+                        <div className="pt-4 flex justify-end space-x-2">
+                            <Button variant="secondary" onClick={() => setIsDetailsModalOpen(false)}>Close</Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDeleteLead}
+                title="Delete Lead"
+            >
+                Are you sure you want to delete the lead "{leadToDelete?.name}"? This action cannot be undone.
+            </ConfirmationModal>
         </div>
     );
 };

@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavClick, isSidebarOpe
             case Page.Properties: return <IconProperties />;
             case Page.Analytics: return <IconAnalytics />;
             case Page.Settings: return <IconSettings />;
-            case 'Admin': return <IconUsers />;
+            case Page.Admin: return <IconUsers />;
         }
     };
     return (
@@ -221,7 +221,7 @@ const App: React.FC = () => {
             case Page.Properties: return <PropertiesPage />;
             case Page.Analytics: return <AnalyticsPage />;
             case Page.Settings: return <SettingsPage />;
-            case 'Admin': return <AdminPanel />;
+            case Page.Admin: return <AdminPanel />;
             default: return <DashboardPage />;
         }
     };

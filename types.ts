@@ -5,6 +5,8 @@ export enum Page {
   Properties = 'Properties',
   Analytics = 'Analytics',
   Settings = 'Settings',
+  Admin = 'Admin',
+  CreateLead = 'CreateLead',
 }
 
 export enum MeetingStatus {
@@ -64,6 +66,7 @@ export interface Lead {
     preferredPropertyType?: string;
     timeline?: string;
     aiInsights?: string[]; // AI-generated suggestions
+    notes?: string;
 }
 
 export interface PropertyFile {
@@ -72,6 +75,7 @@ export interface PropertyFile {
     filename?: string;
     size?: number;
     uploadedAt?: string;
+    file?: File; // Store the original File object for upload
 }
 
 export interface Property {

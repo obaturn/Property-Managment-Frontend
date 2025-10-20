@@ -63,7 +63,7 @@ export const useProperties = (): UsePropertiesReturn => {
   }, []);
 
   // Create new property
-  const createProperty = useCallback(async (propertyData: Omit<Property, '_id' | 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createProperty = useCallback(async (propertyData: Omit<Property, '_id' | 'id' | 'createdAt' | 'updatedAt'> | FormData) => {
     try {
       setError(null);
 

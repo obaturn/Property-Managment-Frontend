@@ -10,7 +10,10 @@
   },
   "dependencies": {
     "buffer": "^6.0.3",
+    "cloudinary": "^1.41.3",
     "framer-motion": "^11.3.18",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.2.1"

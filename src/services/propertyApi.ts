@@ -83,7 +83,17 @@ class PropertyApiService {
   }
 
   // Create new property
-  async createProperty(propertyData: Omit<Property, '_id' | 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Property>> {
+  async createProperty(propertyData: Omit<Property, '_id' | 'id' | 'createdAt' | 'updatedAt'> | FormData): Promise<ApiResponse<Property>> {
+    // Check if it's FormData (for file uploads)
+    if (propertyData instanceof FormData) {
+      return this.request<Property>('/properties', {
+        method: 'POST',
+        body: propertyData,
+        headers: {} // Let browser set content-type for FormData
+      });
+    }
+
+    // Regular JSON request
     return this.request<Property>('/properties', {
       method: 'POST',
       body: JSON.stringify(propertyData),
